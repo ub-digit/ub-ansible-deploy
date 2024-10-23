@@ -1,0 +1,48 @@
+---
+- name: Set host facts
+  ansible.builtin.set_fact:
+    repo_name: "{{ repo_name }}"
+    repo_path: "{{ repo_path }}"
+    secrets_env_example_path: "{{ [repo_path, 'secrets.env.example'] | path_join }}"
+    secrets_env_path: "{{ [repo_path, 'secrets.env'] | path_join }}"
+    docker_directory_path: "{{ [repo_path, 'secrets.env'] | path_join }}"
+  vars:
+    repo_name: "{{ git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first }}"
+    repo_path: "{{ [deploy_directory, git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first] | path_join }}"
+- name: Checkout repo
+  ansible.builtin.git:
+    repo: '{{ git_repo_url }}'
+    dest: '{{ repo_path }}'
+    version: '{{ git_revision }}'
+    force: yes
+- name: Check if secrets.env.example exists
+  ansible.builtin.stat:
+    path: '{{ secrets_env_example_path }}'
+  register: secrets_env
+- name: Copy secrets.env.example to secrets.env
+  ansible.builtin.copy:
+    remote_src: true
+    src: '{{ secrets_env_example_path }}'
+    dest: '{{ secrets_env_path }}'
+  when: secrets_env.stat.exists
+- name: Set variables in secrets.env
+  ansible.builtin.replace:
+    path: '{{ secrets_env_path }}'
+    regexp: '^{{ item.key }}=.*'
+    replace: '{{ item.key}}={{ item.value }}'
+  loop: "{{ secret_env_variables | dict2items }}"
+  when: secrets_env.stat.exists
+- name: Set variables in .env
+  ansible.builtin.replace:
+    path: "{{ [repo_path, '.env'] | path_join }}"
+    regexp: '^{{ item.key }}=.*'
+    replace: '{{ item.key}}={{ item.value }}'
+  loop: "{{ env_variables | dict2items}}"
+- name: Ensure containers are down
+  ansible.builtin.shell:
+    chdir: '{{ repo_path }}'
+    cmd: '{{ docker_command }} down'
+- name: Ensure containers are up
+  ansible.builtin.shell:
+    chdir: '{{ repo_path }}'
+    cmd: '{{ docker_command }} up -d'

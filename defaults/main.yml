@@ -1,0 +1,3 @@
+docker_directory: './docker'
+docker_command: './docker-compose-release.sh'
+deploy_directory: '/apps'
