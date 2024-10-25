@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  author: David Gustafsson  
+  description: Docker deployment for Gothenburg University Library
+  company: "Gothenburg University Library"
+  license: "license (BSD, MIT)"
+  min_ansible_version: 2.4
