@@ -1,0 +1,6 @@
+---
+all:
+  hosts:
+    lab:
+      ansible_host: <deploy-host-url>
+      ansible_user: apps

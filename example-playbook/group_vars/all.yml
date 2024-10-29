@@ -1,0 +1,4 @@
+---
+git_repo_url: https://github.com/ub-digit/<app_name>.git
+docker_directory: './docker' # Default is './docker'
+app_name: <app_name>
