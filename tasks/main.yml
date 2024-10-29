@@ -46,3 +46,13 @@
   ansible.builtin.shell:
     chdir: '{{ repo_path }}'
     cmd: '{{ docker_command }} up -d'
+- name: Ensure apache configuration
+  become: yes
+  ansible.builtin.template:
+    owner: root
+    src: '{{ item }}'
+    dest: "/opt/gub-apache2/sites/{{ item | basename | regex_replace('\\.conf\\.j2$', replace) }}"
+  vars:
+    replace: '-{{ inventory_hostname }}.conf'
+  with_fileglob: '{{ playbook_dir }}/templates/sites/*.conf.j2'
+  notify: reload apache
