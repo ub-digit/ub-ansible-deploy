@@ -2,10 +2,10 @@
 
 ## Required variables
 
-### git_repo_url
+### docker_git_repo_url
 Url to git repo containing docker compose configuration
 
-### git_revision
+### docker_git_revision
 Git revision for repo containing docker compose configuration
 
 ### env_variables

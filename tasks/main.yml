@@ -7,15 +7,15 @@
     secrets_env_path: "{{ [repo_path, docker_directory, 'secrets.env'] | path_join }}"
     docker_directory_path: "{{ [repo_path, docker_directory] | path_join }}"
   vars:
-    repo_name: "{{ git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first }}"
-    repo_path: "{{ [deploy_directory, git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first] | path_join }}"
+    repo_name: "{{ docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first }}"
+    repo_path: "{{ [deploy_directory, docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first] | path_join }}"
 - name: Perform deploy
   block:
   - name: Checkout repo
     ansible.builtin.git:
-      repo: '{{ git_repo_url }}'
+      repo: '{{ docker_git_repo_url }}'
       dest: '{{ repo_path }}'
-      version: '{{ git_revision }}'
+      version: '{{ docker_git_revision }}'
       force: yes
   - name: Check if secrets.env.example exists
     ansible.builtin.stat:
