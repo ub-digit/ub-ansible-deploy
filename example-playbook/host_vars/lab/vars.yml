@@ -1,5 +1,5 @@
 ---
-git_revision: master
+docker_git_revision: master
 frontend_git_revision: <frontend_git_revision>
 backend_git_revision: <backend_git_revision>
 docker_command: ./docker-compose-release-mailpit.sh
