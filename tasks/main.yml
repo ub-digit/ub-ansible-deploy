@@ -9,6 +9,7 @@
   vars:
     repo_name: "{{ docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first }}"
     repo_path: "{{ [deploy_directory, docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first] | path_join }}"
+
 - name: Perform deploy
   block:
   - name: Checkout repo
@@ -17,16 +18,19 @@
       dest: '{{ repo_path }}'
       version: '{{ docker_git_revision }}'
       force: yes
+
   - name: Check if secrets.env.example exists
     ansible.builtin.stat:
       path: '{{ secrets_env_example_path }}'
     register: secrets_env
+
   - name: Copy secrets.env.example to secrets.env
     ansible.builtin.copy:
       remote_src: true
       src: '{{ secrets_env_example_path }}'
       dest: '{{ secrets_env_path }}'
     when: secrets_env.stat.exists
+
   - name: Set variables in secrets.env
     ansible.builtin.replace:
       path: '{{ secrets_env_path }}'
@@ -34,20 +38,24 @@
       replace: '{{ item.key}}={{ item.value }}'
     loop: "{{ secret_env_variables | dict2items }}"
     when: secrets_env.stat.exists
+
   - name: Set variables in .env
     ansible.builtin.replace:
       path: "{{ [repo_path, docker_directory, '.env'] | path_join }}"
       regexp: '^{{ item.key }}=.*'
       replace: '{{ item.key}}={{ item.value }}'
     loop: "{{ env_variables | dict2items}}"
+
   - name: Ensure containers are down
     ansible.builtin.shell:
       chdir: '{{ docker_directory_path }}'
       cmd: '{{ docker_command }} down'
+
   - name: Ensure containers are up
     ansible.builtin.shell:
       chdir: '{{ docker_directory_path }}'
       cmd: '{{ docker_command }} up -d'
+
   - name: Ensure apache configuration
     become: yes
     ansible.builtin.template:
@@ -58,4 +66,13 @@
       replace: '-{{ inventory_hostname }}.conf'
     with_fileglob: '{{ playbook_dir }}/templates/sites/*.conf.j2'
     notify: reload apache
+
+  - name: Ensure cron configuration
+    become: yes
+    ansible.builtin.template:
+      owner: root
+      src: '{{ item }}'
+      dest: "/etc/cron.d/{{ item | basename | regex_replace('\\.j2$','') }}"
+    with_fileglob: '{{ playbook_dir }}/templates/cron.d/*.j2'
+
   when: not (skip_deploy is defined and skip_deploy)
