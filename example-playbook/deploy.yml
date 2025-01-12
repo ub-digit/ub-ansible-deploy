@@ -2,24 +2,29 @@
 - name: Deploy
   hosts: all
   tasks:
+
   - name: Include default environment variables
     ansible.builtin.include_vars:
       file: default_env.yml
       name: env_variables
+
   - name: Include environment variables
     ansible.builtin.include_vars:
       file: '{{ inventory_hostname }}/env.yml'
       name: env_variables
       hash_behaviour: merge
+
   - name: Include default secret environment variables
     ansible.builtin.include_vars:
       file: default_secret_env.yml
       name: secret_env_variables
+
   - name: Include secret environment variables
     ansible.builtin.include_vars:
       file: '{{ inventory_hostname }}/secret_env.yml'
       name: secret_env_variables
       hash_behaviour: merge
+
   - name: Ensure data directory
     become: yes
     ansible.builtin.file:
@@ -28,7 +33,8 @@
       owner: "{{ ansible_user }}"
       group: "{{ ansible_user }}"
       mode: '755'
-  - name: Ensure db directies
+
+  - name: Ensure data sub-directies
     become: yes
     ansible.builtin.file:
       path: '/data/{{ app_name }}/{{ item }}'
@@ -38,14 +44,8 @@
       mode: '755'
     loop:
       - db
-  - name: Ensure files directory
-    become: yes
-    ansible.builtin.file:
-      path: '/data/{{ app_name }}/files'
-      state: directory
-      owner: root
-      group: root
-      mode: '755'
+      - files
+
   - name: Deploy app
     include_role:
       name: ub-ansible-deploy
