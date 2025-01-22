@@ -31,3 +31,6 @@ templates/sites/\<site-name\>.conf.j2
 : Apache site configuration template to be written to /opt/gub-apache2/sites/\<site-name\>-\<host-alias\>.conf
 
 See `example_playbook` directory for reference implementation.
+
+templates/cron.d/<cron-file>.j2
+: Cron file template to be written to /etc/cron.d/<cron-file>
