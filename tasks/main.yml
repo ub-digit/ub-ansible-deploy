@@ -67,6 +67,11 @@
     with_fileglob: '{{ playbook_dir }}/templates/sites/*.conf.j2'
     notify: reload apache
 
+  - name: Check if cron configuration exists
+    ansible.builtin.stat:
+      path: '{{ playbook_dir }}/templates/cron.d'
+    register: cron_d
+
   - name: Ensure cron configuration
     become: yes
     ansible.builtin.template:
@@ -74,5 +79,6 @@
       src: '{{ item }}'
       dest: "/etc/cron.d/{{ item | basename | regex_replace('\\.j2$','') }}"
     with_fileglob: '{{ playbook_dir }}/templates/cron.d/*.j2'
+    when: cron_d.stat.exists
 
   when: not (skip_deploy is defined and skip_deploy)
