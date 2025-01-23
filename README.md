@@ -34,3 +34,19 @@ See `example_playbook` directory for reference implementation.
 
 templates/cron.d/<cron-file>.j2
 : Cron file template to be written to /etc/cron.d/<cron-file>
+
+## Variables
+
+Extra variables available in templates are:
+
+### repo_path
+
+Path the deployed repo on remote server.
+
+### repo_name
+
+Name of the deployed repo.
+
+### docker_directory_path
+
+Path to docker directory on remote server.
