@@ -1,14 +1,14 @@
 ---
 - name: Set host facts
   ansible.builtin.set_fact:
-    repo_name: "{{ repo_name }}"
-    repo_path: "{{ repo_path }}"
+    repo_name: '{{ repo_name }}'
+    repo_path: '{{ repo_path }}'
     secrets_env_example_path: "{{ [repo_path, docker_directory, 'secrets.env.example'] | path_join }}"
     secrets_env_path: "{{ [repo_path, docker_directory, 'secrets.env'] | path_join }}"
-    docker_directory_path: "{{ [repo_path, docker_directory] | path_join }}"
+    docker_directory_path: '{{ [repo_path, docker_directory] | path_join }}'
     apache_site_conf_suffix: "{{ inventory_hostname_apache_site_suffix if inventory_hostname != 'production' else '.conf' }}"
   vars:
-    inventory_hostname_site_conf_suffix: "-{{ inventory_hostname }}.conf"
+    inventory_hostname_site_conf_suffix: '-{{ inventory_hostname }}.conf'
     repo_name: "{{ docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first }}"
     repo_path: "{{ [deploy_directory, docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first] | path_join }}"
 
@@ -38,7 +38,7 @@
       path: '{{ secrets_env_path }}'
       regexp: '^{{ item.key }}=.*'
       replace: '{{ item.key}}={{ item.value }}'
-    loop: "{{ secret_env_variables | dict2items }}"
+    loop: '{{ secret_env_variables | dict2items }}'
     when: secrets_env.stat.exists
 
   - name: Set variables in .env
@@ -46,7 +46,7 @@
       path: "{{ [repo_path, docker_directory, '.env'] | path_join }}"
       regexp: '^{{ item.key }}=.*'
       replace: '{{ item.key}}={{ item.value }}'
-    loop: "{{ env_variables | dict2items}}"
+    loop: '{{ env_variables | dict2items}}'
 
   - name: Ensure containers are down
     ansible.builtin.shell:
@@ -65,7 +65,7 @@
       src: '{{ item }}'
       dest: "/opt/gub-apache2/sites/{{ item | basename | regex_replace('\\.conf\\.j2$', replace) }}"
     vars:
-      replace: "{{ apache_site_conf_suffix }}"
+      replace: '{{ apache_site_conf_suffix }}'
     with_fileglob: '{{ playbook_dir }}/templates/sites/*.conf.j2'
     notify: reload apache
 

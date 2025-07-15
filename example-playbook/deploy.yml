@@ -30,8 +30,8 @@
     ansible.builtin.file:
       path: '/data/{{ app_name }}'
       state: directory
-      owner: "{{ ansible_user }}"
-      group: "{{ ansible_user }}"
+      owner: '{{ ansible_user }}'
+      group: '{{ ansible_user }}'
       mode: '755'
 
   - name: Ensure data sub-directies
@@ -39,8 +39,8 @@
     ansible.builtin.file:
       path: '/data/{{ app_name }}/{{ item }}'
       state: directory
-      owner: "{{ ansible_user }}"
-      group: "{{ ansible_user }}"
+      owner: '{{ ansible_user }}'
+      group: '{{ ansible_user }}'
       mode: '755'
     loop:
       - db
