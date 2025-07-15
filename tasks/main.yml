@@ -6,7 +6,9 @@
     secrets_env_example_path: "{{ [repo_path, docker_directory, 'secrets.env.example'] | path_join }}"
     secrets_env_path: "{{ [repo_path, docker_directory, 'secrets.env'] | path_join }}"
     docker_directory_path: "{{ [repo_path, docker_directory] | path_join }}"
+    apache_site_conf_suffix: "{{ inventory_hostname_apache_site_suffix if inventory_hostname != 'production' else '.conf' }}"
   vars:
+    inventory_hostname_site_conf_suffix: "-{{ inventory_hostname }}.conf"
     repo_name: "{{ docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first }}"
     repo_path: "{{ [deploy_directory, docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first] | path_join }}"
 
@@ -63,7 +65,7 @@
       src: '{{ item }}'
       dest: "/opt/gub-apache2/sites/{{ item | basename | regex_replace('\\.conf\\.j2$', replace) }}"
     vars:
-      replace: '-{{ inventory_hostname }}.conf'
+      replace: "{{ apache_site_conf_suffix }}"
     with_fileglob: '{{ playbook_dir }}/templates/sites/*.conf.j2'
     notify: reload apache
 
