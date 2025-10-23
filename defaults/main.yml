@@ -1,3 +1,4 @@
 docker_directory: './docker'
 docker_command: './docker-compose-release.sh'
+docker_scripts: []
 deploy_directory: '/apps'

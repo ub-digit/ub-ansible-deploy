@@ -48,6 +48,12 @@
       replace: '{{ item.key}}={{ item.value }}'
     loop: '{{ env_variables | dict2items}}'
 
+  - name: Run docker scripts
+    ansible.builtin.command: "./{{ item }}"
+    args:
+      chdir: "{{ [repo_path, docker_directory] | path_join }}"
+    loop: "{{ docker_scripts }}"
+
   - name: Ensure containers are down
     ansible.builtin.shell:
       chdir: '{{ docker_directory_path }}'
