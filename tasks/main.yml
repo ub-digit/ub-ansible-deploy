@@ -50,81 +50,77 @@
     hash_behaviour: merge
   when: secret_env_variables_stat.stat.exists
 
-- name: Perform deploy
-  block:
-  - name: Checkout repo
-    ansible.builtin.git:
-      repo: '{{ docker_git_repo_url }}'
-      dest: '{{ repo_path }}'
-      version: '{{ docker_git_revision }}'
-      force: yes
+- name: Checkout repo
+  ansible.builtin.git:
+    repo: '{{ docker_git_repo_url }}'
+    dest: '{{ repo_path }}'
+    version: '{{ docker_git_revision }}'
+    force: yes
 
-  - name: Check if secrets.env.example exists
-    ansible.builtin.stat:
-      path: '{{ secrets_env_example_path }}'
-    register: secrets_env
+- name: Check if secrets.env.example exists
+  ansible.builtin.stat:
+    path: '{{ secrets_env_example_path }}'
+  register: secrets_env
 
-  - name: Copy secrets.env.example to secrets.env
-    ansible.builtin.copy:
-      remote_src: true
-      src: '{{ secrets_env_example_path }}'
-      dest: '{{ secrets_env_path }}'
-    when: secrets_env.stat.exists
+- name: Copy secrets.env.example to secrets.env
+  ansible.builtin.copy:
+    remote_src: true
+    src: '{{ secrets_env_example_path }}'
+    dest: '{{ secrets_env_path }}'
+  when: secrets_env.stat.exists
 
-  - name: Set variables in secrets.env
-    ansible.builtin.replace:
-      path: '{{ secrets_env_path }}'
-      regexp: '^{{ item.key }}=.*'
-      replace: '{{ item.key}}={{ item.value }}'
-    loop: '{{ secret_env_variables | dict2items }}'
-    when: secrets_env.stat.exists
+- name: Set variables in secrets.env
+  ansible.builtin.replace:
+    path: '{{ secrets_env_path }}'
+    regexp: '^{{ item.key }}=.*'
+    replace: '{{ item.key}}={{ item.value }}'
+  loop: '{{ secret_env_variables | dict2items }}'
+  when: secrets_env.stat.exists
 
-  - name: Set variables in .env
-    ansible.builtin.replace:
-      path: "{{ [repo_path, docker_directory, '.env'] | path_join }}"
-      regexp: '^{{ item.key }}=.*'
-      replace: '{{ item.key}}={{ item.value }}'
-    loop: '{{ env_variables | dict2items}}'
+- name: Set variables in .env
+  ansible.builtin.replace:
+    path: "{{ [repo_path, docker_directory, '.env'] | path_join }}"
+    regexp: '^{{ item.key }}=.*'
+    replace: '{{ item.key}}={{ item.value }}'
+  loop: '{{ env_variables | dict2items}}'
 
-  - name: Run docker scripts
-    ansible.builtin.command: "./{{ item }}"
-    args:
-      chdir: "{{ [repo_path, docker_directory] | path_join }}"
-    loop: "{{ docker_scripts }}"
+- name: Run docker scripts
+  ansible.builtin.command: "./{{ item }}"
+  args:
+    chdir: "{{ [repo_path, docker_directory] | path_join }}"
+  loop: "{{ docker_scripts }}"
 
-  - name: Ensure containers are down
-    ansible.builtin.shell:
-      chdir: '{{ docker_directory_path }}'
-      cmd: '{{ docker_command }} down'
+- name: Ensure containers are down
+  ansible.builtin.shell:
+    chdir: '{{ docker_directory_path }}'
+    cmd: '{{ docker_command }} down'
 
-  - name: Ensure containers are up
-    ansible.builtin.shell:
-      chdir: '{{ docker_directory_path }}'
-      cmd: '{{ docker_command }} up -d'
+- name: Ensure containers are up
+  ansible.builtin.shell:
+    chdir: '{{ docker_directory_path }}'
+    cmd: '{{ docker_command }} up -d'
 
-  - name: Ensure apache configuration
-    become: yes
-    ansible.builtin.template:
-      owner: root
-      src: '{{ item }}'
-      dest: "/opt/gub-apache2/sites/{{ item | basename | regex_replace('\\.conf\\.j2$', replace) }}"
-    vars:
-      replace: '{{ apache_site_conf_suffix }}'
-    with_fileglob: '{{ playbook_dir }}/templates/sites/*.conf.j2'
-    notify: reload apache
+- name: Ensure apache configuration
+  become: yes
+  ansible.builtin.template:
+    owner: root
+    src: '{{ item }}'
+    dest: "/opt/gub-apache2/sites/{{ item | basename | regex_replace('\\.conf\\.j2$', replace) }}"
+  vars:
+    replace: '{{ apache_site_conf_suffix }}'
+  with_fileglob: '{{ playbook_dir }}/templates/sites/*.conf.j2'
+  notify: reload apache
 
-  - name: Check if cron configuration exists
-    ansible.builtin.stat:
-      path: '{{ playbook_dir }}/templates/cron.d'
-    register: cron_d
+- name: Check if cron configuration exists
+  ansible.builtin.stat:
+    path: '{{ playbook_dir }}/templates/cron.d'
+  register: cron_d
 
-  - name: Ensure cron configuration
-    become: yes
-    ansible.builtin.template:
-      owner: root
-      src: '{{ item }}'
-      dest: "/etc/cron.d/{{ item | basename | regex_replace('\\.j2$','') }}"
-    with_fileglob: '{{ playbook_dir }}/templates/cron.d/*.j2'
-    when: cron_d.stat.exists
-
-  when: not (skip_deploy is defined and skip_deploy)
+- name: Ensure cron configuration
+  become: yes
+  ansible.builtin.template:
+    owner: root
+    src: '{{ item }}'
+    dest: "/etc/cron.d/{{ item | basename | regex_replace('\\.j2$','') }}"
+  with_fileglob: '{{ playbook_dir }}/templates/cron.d/*.j2'
+  when: cron_d.stat.exists

@@ -5,3 +5,7 @@ galaxy_info:
   company: "Gothenburg University Library"
   license: "license (BSD, MIT)"
   min_ansible_version: 2.4
+dependencies:
+  - name: ub-ansible-deploy-facts
+    src: https://github.com/ub-digit/ub-ansible-deploy-facts.git
+    version: master
