@@ -14,6 +14,25 @@
     repo_name: "{{ docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first }}"
     repo_path: "{{ [deploy_directory, docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first] | path_join }}"
 
+- name: Ensure data directory
+  become: yes
+  ansible.builtin.file:
+    path: '{{ data_dir }}'
+    state: directory
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '755'
+
+- name: Ensure data sub directories
+  become: yes
+  ansible.builtin.file:
+    path: '{{ item.value.path }}'
+    state: directory
+    owner: '{{ item.value.owner | default(ansible_user) }}'
+    group: '{{ item.value.group | default(ansible_user) }}'
+    mode: "{{ item.value.mode | default('755') }}"
+  loop: '{{ data_dirs | dict2items }}'
+
 - name: Include default environment variables
   ansible.builtin.include_vars:
     file: "{{ [playbook_dir, 'vars', 'default_env.yml'] | path_join }}"
