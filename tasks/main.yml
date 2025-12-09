@@ -21,7 +21,7 @@
     state: directory
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'
-    mode: '755'
+    mode: "0755"
 
 - name: Ensure data sub directories
   become: yes
@@ -30,7 +30,7 @@
     state: directory
     owner: '{{ item.value.owner | default(ansible_user) }}'
     group: '{{ item.value.group | default(ansible_user) }}'
-    mode: "{{ item.value.mode | default('755') }}"
+    mode: "{{ item.value.mode | default('0750') }}"
   loop: '{{ data_dirs | dict2items }}'
 
 - name: Include default environment variables
