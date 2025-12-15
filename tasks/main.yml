@@ -109,15 +109,17 @@
     chdir: "{{ [repo_path, docker_directory] | path_join }}"
   loop: "{{ docker_scripts }}"
 
-- name: Ensure containers are down
-  ansible.builtin.shell:
-    chdir: '{{ docker_directory_path }}'
-    cmd: '{{ docker_command }} down'
+- block:
+    - name: Ensure containers are down
+      ansible.builtin.shell:
+        chdir: '{{ docker_directory_path }}'
+        cmd: '{{ docker_command }} down'
 
-- name: Ensure containers are up
-  ansible.builtin.shell:
-    chdir: '{{ docker_directory_path }}'
-    cmd: '{{ docker_command }} up -d'
+    - name: Ensure containers are up
+      ansible.builtin.shell:
+        chdir: '{{ docker_directory_path }}'
+        cmd: '{{ docker_command }} up -d'
+  tags: restart
 
 - name: Ensure apache configuration
   become: yes
