@@ -1,4 +1,4 @@
 ---
 # Empty file
-env_variables: []
-secret_env_variables: []
+env_variables: {}
+secret_env_variables: {}
