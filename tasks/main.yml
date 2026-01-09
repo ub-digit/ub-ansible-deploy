@@ -79,30 +79,36 @@
 
 - name: Check if secrets.env.example exists
   ansible.builtin.stat:
-    path: '{{ secrets_env_example_path }}'
-  register: secrets_env
+    path: '{{ repo_secrets_env_example_file }}'
+  register: repo_secrets_env_example_file_stat
 
 - name: Copy secrets.env.example to secrets.env
   ansible.builtin.copy:
     remote_src: true
-    src: '{{ secrets_env_example_path }}'
-    dest: '{{ secrets_env_path }}'
-  when: secrets_env.stat.exists
+    src: '{{ repo_secrets_env_example_file }}'
+    dest: '{{ repo_secrets_env_file }}'
+  when: repo_secrets_env_example_file_stat.stat.exists
 
 - name: Set variables in secrets.env
   ansible.builtin.replace:
-    path: '{{ secrets_env_path }}'
+    path: '{{ repo_secrets_env_file }}'
     regexp: '^{{ item.key }}=.*'
     replace: '{{ item.key}}={{ item.value }}'
   loop: '{{ secret_env_variables | dict2items }}'
-  when: secrets_env.stat.exists
+  when: repo_secrets_env_example_file_stat.stat.exists
+
+- name: Check if .env file exists
+  ansible.builtin.stat:
+    path: '{{ repo_env_file }}'
+  register: repo_env_file_stat
 
 - name: Set variables in .env
   ansible.builtin.replace:
-    path: "{{ [repo_path, docker_directory, '.env'] | path_join }}"
+    path: '{{ repo_env_file }}'
     regexp: '^{{ item.key }}=.*'
     replace: '{{ item.key}}={{ item.value }}'
   loop: '{{ env_variables | dict2items}}'
+  when: repo_env_file_stat.stat.exists
 
 - name: Run docker scripts
   ansible.builtin.command: "./{{ item }}"
