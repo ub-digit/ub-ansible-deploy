@@ -3,27 +3,6 @@
   hosts: all
   tasks:
 
-  - name: Ensure data directory
-    become: yes
-    ansible.builtin.file:
-      path: '/data/{{ app_name }}'
-      state: directory
-      owner: '{{ ansible_user }}'
-      group: '{{ ansible_user }}'
-      mode: '755'
-
-  - name: Ensure data sub-directies
-    become: yes
-    ansible.builtin.file:
-      path: '/data/{{ app_name }}/{{ item }}'
-      state: directory
-      owner: '{{ ansible_user }}'
-      group: '{{ ansible_user }}'
-      mode: '755'
-    loop:
-      - db
-      - files
-
   - name: Deploy app
     include_role:
       name: ub-ansible-deploy
