@@ -28,6 +28,7 @@
   ansible.builtin.include_vars:
     file: '{{ env_variables_file }}'
     name: env_variables
+    hash_behaviour: merge
   when: env_variables_file_stat.stat.exists
 
 - name: Check if host specific environment variables file exists
@@ -53,6 +54,7 @@
   ansible.builtin.include_vars:
     file: '{{ secret_env_variables_file }}'
     name: secret_env_variables
+    hash_behaviour: merge
   when: secret_env_variables_file_stat.stat.exists
 
 - name: Check if host specific secret environment variables file exists
