@@ -1,19 +1,4 @@
 ---
-- name: Set host facts
-  ansible.builtin.set_fact:
-    repo_name: '{{ repo_name }}'
-    repo_path: '{{ repo_path }}'
-    secrets_env_example_path: "{{ [repo_path, docker_directory, 'secrets.env.example'] | path_join }}"
-    secrets_env_path: "{{ [repo_path, docker_directory, 'secrets.env'] | path_join }}"
-    docker_directory_path: '{{ [repo_path, docker_directory] | path_join }}'
-    apache_site_conf_suffix: "{{ inventory_hostname_apache_site_conf_suffix if inventory_hostname != 'production' else '.conf' }}"
-    env_variables_host_file: "{{ [playbook_dir, 'vars', inventory_hostname, 'env.yml'] | path_join }}"
-    secret_env_variables_host_file: "{{ [playbook_dir, 'vars', inventory_hostname, 'secret_env.yml'] | path_join }}"
-  vars:
-    inventory_hostname_apache_site_conf_suffix: '-{{ inventory_hostname }}.conf'
-    repo_name: "{{ docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first }}"
-    repo_path: "{{ [deploy_directory, docker_git_repo_url | regex_search('\\/([^\\/]+)\\.git', '\\1') | first] | path_join }}"
-
 - name: Ensure data directory
   become: yes
   ansible.builtin.file:
@@ -21,7 +6,7 @@
     state: directory
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'
-    mode: "0755"
+    mode: '0755'
 
 - name: Ensure data sub directories
   become: yes
@@ -33,15 +18,22 @@
     mode: "{{ item.value.mode | default('0750') }}"
   loop: '{{ data_dirs | dict2items }}'
 
+- name: Check if default environment variables file exists
+  stat:
+    path: '{{ env_variables_file }}'
+  register: env_variables_file_stat
+  delegate_to: localhost
+
 - name: Include default environment variables
   ansible.builtin.include_vars:
-    file: "{{ [playbook_dir, 'vars', 'default_env.yml'] | path_join }}"
+    file: '{{ env_variables_file }}'
     name: env_variables
+  when: env_variables_file_stat.stat.exists
 
 - name: Check if host specific environment variables file exists
   stat:
     path: '{{ env_variables_host_file }}'
-  register: env_variables_stat
+  register: env_variables_host_file_stat
   delegate_to: localhost
 
 - name: Include host specific environment variables
@@ -49,17 +41,24 @@
     file: '{{ env_variables_host_file }}'
     name: env_variables
     hash_behaviour: merge
-  when: env_variables_stat.stat.exists
+  when: env_variables_host_file_stat.stat.exists
+
+- name: Check if default secret environment variables file exists
+  stat:
+    path: '{{ secret_env_variables_host_file }}'
+  register: secret_env_variables_file_stat
+  delegate_to: localhost
 
 - name: Include default secret environment variables
   ansible.builtin.include_vars:
-    file: "{{ [playbook_dir, 'vars', 'default_secret_env.yml'] | path_join }}"
+    file: '{{ secret_env_variables_file }}'
     name: secret_env_variables
+  when: secret_env_variables_file_stat.stat.exists
 
-- name: Check if host specific environment variables file exists
+- name: Check if host specific secret environment variables file exists
   stat:
     path: '{{ secret_env_variables_host_file }}'
-  register: secret_env_variables_stat
+  register: secret_env_variables_host_file_stat
   delegate_to: localhost
 
 - name: Include host specific secret environment variables
@@ -67,7 +66,7 @@
     file: '{{ secret_env_variables_host_file }}'
     name: secret_env_variables
     hash_behaviour: merge
-  when: secret_env_variables_stat.stat.exists
+  when: secret_env_variables_host_file_stat.stat.exists
 
 - name: Checkout repo
   ansible.builtin.git:
