@@ -46,7 +46,7 @@
 
 - name: Check if default secret environment variables file exists
   stat:
-    path: '{{ secret_env_variables_host_file }}'
+    path: '{{ secret_env_variables_file }}'
   register: secret_env_variables_file_stat
   delegate_to: localhost
 
