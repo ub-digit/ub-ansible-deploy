@@ -139,6 +139,23 @@
   with_fileglob: '{{ playbook_dir }}/templates/sites/*.conf.j2'
   notify: reload apache
 
+- name: Check if shared apache configuration exists
+  ansible.builtin.stat:
+    path: '{{ playbook_dir }}/templates/sites/conf'
+  register: shared_apache_conf_stat
+  delegate_to: localhost
+
+- name: Ensure shared apache configuration
+  become: yes
+  ansible.builtin.template:
+    owner: root
+    src: '{{ item }}'
+    dest: "/opt/gub-apache2/conf-shared/{{ item | basename | regex_replace('\\.j2$','') }}"
+
+  with_fileglob: '{{ playbook_dir }}/templates/sites/conf/*.conf.j2'
+  notify: reload apache
+  when: shared_apache_conf_stat.stat.exists
+
 - name: Check if cron configuration exists
   ansible.builtin.stat:
     path: '{{ playbook_dir }}/templates/cron.d'
