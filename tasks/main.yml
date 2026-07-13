@@ -70,63 +70,114 @@
     hash_behaviour: merge
   when: secret_env_variables_host_file_stat.stat.exists
 
-- name: Checkout repo
+- name: Set local repo path
+  ansible.builtin.set_fact:
+    local_repo_path: "{{ playbook_dir }}/repo"
+
+- name: Ensure repo directory
+  ansible.builtin.file:
+    state: directory
+    path: "{{ local_repo_path }}"
+  delegate_to: localhost
+
+- name: Checkout repo locally
   ansible.builtin.git:
     repo: '{{ docker_git_repo_url }}'
-    dest: '{{ repo_path }}'
+    dest: '{{ local_repo_path }}'
     version: '{{ docker_git_revision }}'
     force: yes
+  delegate_to: localhost
+
+- name: Set release directory paths
+  ansible.builtin.set_fact:
+    release_path: "{{ release_path }}"
+    release_secrets_env_example_file_path: "{{ [release_path, 'secrets.env.example'] | path_join }}"
+    release_secrets_env_file_path: "{{ [release_path, 'secrets.env'] | path_join }}"
+    release_env_file_path: "{{ [release_path, '.env'] | path_join }}"
+  vars:
+    release_id: "{{ ansible_date_time.iso8601_basic_short }}-{{ git_revision }}"
+    release_path: "{{ [releases_path, release_id] | path_join }}"
+
+- name: Copy docker directory to release directory
+  ansible.builtin.copy:
+    src: "{{ local_repo_docker_path }}/"
+    dest: "{{ release_path }}/"
+    mode: preserve
 
 - name: Check if secrets.env.example exists
   ansible.builtin.stat:
-    path: '{{ repo_secrets_env_example_file }}'
-  register: repo_secrets_env_example_file_stat
+    path: '{{ release_secrets_env_example_file_path }}'
+  register: release_secrets_env_example_file_stat
 
 - name: Copy secrets.env.example to secrets.env
   ansible.builtin.copy:
     remote_src: true
-    src: '{{ repo_secrets_env_example_file }}'
-    dest: '{{ repo_secrets_env_file }}'
-  when: repo_secrets_env_example_file_stat.stat.exists
+    src: '{{ release_secrets_env_example_file_path }}'
+    dest: '{{ release_secrets_env_file_path }}'
+  when: release_secrets_env_example_file_stat.stat.exists
 
 - name: Set variables in secrets.env
   ansible.builtin.replace:
-    path: '{{ repo_secrets_env_file }}'
+    path: '{{ release_secrets_env_file_path }}'
     regexp: '^{{ item.key }}=.*'
     replace: '{{ item.key}}={{ item.value }}'
   loop: '{{ secret_env_variables | dict2items }}'
-  when: repo_secrets_env_example_file_stat.stat.exists
+  when: release_secrets_env_example_file_stat.stat.exists
 
 - name: Check if .env file exists
   ansible.builtin.stat:
-    path: '{{ repo_env_file }}'
-  register: repo_env_file_stat
+    path: '{{ release_env_file_path }}'
+  register: release_env_file_stat
 
 - name: Set variables in .env
   ansible.builtin.replace:
-    path: '{{ repo_env_file }}'
+    path: '{{ release_env_file_path }}'
     regexp: '^{{ item.key }}=.*'
     replace: '{{ item.key}}={{ item.value }}'
-  loop: '{{ env_variables | dict2items}}'
-  when: repo_env_file_stat.stat.exists
+  loop: '{{ env_variables | dict2items }}'
+  when: release_env_file_stat.stat.exists
 
 - name: Run docker scripts
   ansible.builtin.command: "./{{ item }}"
   args:
-    chdir: "{{ [repo_path, docker_directory] | path_join }}"
+    chdir: "{{ release_path }}"
   loop: "{{ docker_scripts }}"
 
-- block:
-    - name: Ensure containers are down
+- name: Switch current relase symlink
+  ansible.builtin.file:
+    src: "{{ release_path }}"
+    dest: "{{ current_release_path }}"
+    state: link
+    force: true
+
+- block: # TODO: Docker compose down in old release directory if exists?
+    - name: Ensure containers are pulled
       ansible.builtin.shell:
-        chdir: '{{ docker_directory_path }}'
-        cmd: '{{ docker_command }} down'
+        chdir: '{{ current_release_path }}'
+        cmd: '{{ docker_command }} pull'
 
     - name: Ensure containers are up
       ansible.builtin.shell:
-        chdir: '{{ docker_directory_path }}'
+        chdir: '{{ current_release_path }}'
         cmd: '{{ docker_command }} up -d'
   tags: restart
+
+- name: Find existing releases
+  ansible.builtin.find:
+    path: '{{ releases_path }}'
+    file_type: directory
+    recurse: false
+  register: releases
+
+- name: Sort releases
+  ansible.builtin.set_fact:
+    sorted_releases: "{{ releases.files | sort(attribute='path', reverse=true) }}"
+
+- name: Remove releases if more than release count
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ sorted_releases[release_count:] }}"
 
 - name: Ensure apache configuration
   become: yes
