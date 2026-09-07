@@ -95,7 +95,7 @@
     release_secrets_env_file_path: "{{ [release_path, 'secrets.env'] | path_join }}"
     release_env_file_path: "{{ [release_path, '.env'] | path_join }}"
   vars:
-    release_id: "{{ ansible_date_time.iso8601_basic_short }}-{{ git_revision }}"
+    release_id: "{{ ansible_date_time.iso8601_basic_short }}"
     release_path: "{{ [releases_path, release_id] | path_join }}"
 
 - name: Copy docker directory to release directory
