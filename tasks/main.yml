@@ -15,7 +15,7 @@
     state: directory
     owner: '{{ item.value.owner | default(ansible_user) }}'
     group: '{{ item.value.group | default(ansible_user) }}'
-    mode: "{{ item.value.mode | default('0750') }}"
+    mode: "{{ item.value.mode | default('0755') }}"
   loop: '{{ data_dirs | dict2items }}'
 
 - name: Check if default environment variables file exists
